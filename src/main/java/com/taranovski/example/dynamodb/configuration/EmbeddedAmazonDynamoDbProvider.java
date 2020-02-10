@@ -12,17 +12,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
 import javax.annotation.PreDestroy;
 import java.io.File;
+import java.util.Objects;
 
 /**
  * Created by Alyx on 09.02.2020.
  */
-@Profile("local")
 @Configuration
-@ConditionalOnExpression("#{environment.getActiveProfiles().?[#this == 'local'].length == 1}")
+@ConditionalOnExpression("#{environment.getActiveProfiles().?[#this == 'embedded-dynamo-db'].length == 1}")
 public class EmbeddedAmazonDynamoDbProvider {
 
     @Value("${application.connectivity.dynamodb.service.endpoint}")
@@ -35,6 +34,8 @@ public class EmbeddedAmazonDynamoDbProvider {
     private String awsSecretKey;
     @Value("${application.connectivity.dynamodb.local.port}")
     private String localServicePort;
+    @Value("${application.connectivity.dynamodb.local.persistence.type}")
+    private String localServicePersistenceType;
 
     private AmazonDynamoDB amazonDynamoDB;
     private DynamoDBProxyServer dynamoDBProxyServer;
@@ -45,8 +46,9 @@ public class EmbeddedAmazonDynamoDbProvider {
 
         dynamoDBProxyServer = ServerRunner.createServerFromCommandLineArgs(
                 new String[]{
-//                        "-inMemory",
-                        "-dbPath", System.getProperty("user.dir") + File.separator + "target",
+                        Objects.equals(localServicePersistenceType, "in-memory") ?
+                                "-inMemory" :
+                                "-dbPath", System.getProperty("user.dir") + File.separator + "target",
                         "-port", localServicePort,
                 });
 

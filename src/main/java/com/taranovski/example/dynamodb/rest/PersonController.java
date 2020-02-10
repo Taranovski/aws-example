@@ -34,7 +34,7 @@ public class PersonController {
     }
 
     @GetMapping(path = "/$id")
-    public Person findById(@PathVariable(name = "id") Long id) {
+    public Person findById(@PathVariable(name = "id") String id) {
         return personRepository.findById(id);
     }
 
@@ -49,7 +49,7 @@ public class PersonController {
     }
 
     @DeleteMapping(path = "/$id")
-    public void deleteById(@PathVariable(name = "id") Long id) {
+    public void deleteById(@PathVariable(name = "id") String id) {
         personRepository.delete(id);
     }
 

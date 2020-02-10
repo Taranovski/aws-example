@@ -1,11 +1,13 @@
+spring.profiles.include: embedded-dynamo-db
+
 server.port: 8080
 server.servlet.contextPath: /DynamoDBExample
 
 application.connectivity.dynamodb.local.port: 9090
+#application.connectivity.dynamodb.local.persistence.type: in-memory
+application.connectivity.dynamodb.local.persistence.type: disk
 
 application.connectivity.dynamodb.service.endpoint: http://localhost:9090
 application.connectivity.dynamodb.signin.region: us-west-2
-application.connectivity.dynamodb.awsAccessKeyId: dummy
-application.connectivity.dynamodb.awsSecretKey: dummy
-
-sqlite4java.library.path: ${basedir}/target/dependencies
+application.connectivity.dynamodb.awsAccessKeyId: no-op-access-key-id
+application.connectivity.dynamodb.awsSecretKey: no-op-secret-key

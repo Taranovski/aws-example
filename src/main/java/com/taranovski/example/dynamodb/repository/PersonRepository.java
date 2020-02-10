@@ -8,13 +8,13 @@ import java.util.List;
  * Created by Alyx on 09.02.2020.
  */
 public interface PersonRepository {
-    Person findById(Long id);
+    Person findById(String id);
 
     void persist(Person person);
 
     String create(Person person);
 
-    void delete(Long id);
+    void delete(String id);
 
     List<Person> findAllOnPage(Integer pageSize, Integer pageNumber);
 }

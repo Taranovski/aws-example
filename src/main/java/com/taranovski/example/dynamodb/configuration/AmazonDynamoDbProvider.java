@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
  * Created by Alyx on 09.02.2020.
  */
 @Configuration
-@ConditionalOnExpression("#{environment.getActiveProfiles().?[#this == 'non-prod-dynamo-db'].length == 0}")
+@ConditionalOnExpression("#{environment.getActiveProfiles().?[#this == 'embedded-dynamo-db'].length == 0}")
 public class AmazonDynamoDbProvider {
 
     @Value("${application.connectivity.dynamodb.service.endpoint}")

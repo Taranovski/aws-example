@@ -2,19 +2,22 @@ package com.taranovski.example.dynamodb.repository.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.QueryResultPage;
-import com.amazonaws.services.dynamodbv2.datamodeling.ScanResultPage;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemResult;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.Select;
 import com.taranovski.example.dynamodb.domain.Person;
+import com.taranovski.example.dynamodb.monitoring.DynamoDbMonitoringService;
 import com.taranovski.example.dynamodb.repository.PersonRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
+import static java.util.Collections.singletonMap;
 
 /**
  * Created by Alyx on 09.02.2020.
@@ -25,43 +28,65 @@ public class PersonRepositoryImpl implements PersonRepository {
     private final AmazonDynamoDB amazonDynamoDB;
     private final DynamoDBMapper mapper;
 
-    public PersonRepositoryImpl(AmazonDynamoDB amazonDynamoDB) {
+    private final DynamoDbMonitoringService dynamoDbMonitoringService;
+
+    public PersonRepositoryImpl(AmazonDynamoDB amazonDynamoDB,
+                                DynamoDbMonitoringService dynamoDbMonitoringService) {
         this.amazonDynamoDB = amazonDynamoDB;
         this.mapper = new DynamoDBMapper(amazonDynamoDB);
+
+        this.dynamoDbMonitoringService = dynamoDbMonitoringService;
     }
 
     @Override
-    public Person findById(Long id) {
-        return mapper.load(Person.class, id);
+    public Person findById(String id) {
+        Map<String, AttributeValue> attributes = singletonMap(Person.ID, new AttributeValue(id));
+        GetItemResult getItemResult = amazonDynamoDB.getItem(Person.TABLE_NAME, attributes);
+
+        ConsumedCapacity consumedCapacity = getItemResult.getConsumedCapacity();
+
+        dynamoDbMonitoringService.record(consumedCapacity, "findById", id);
+
+        return mapper.marshallIntoObject(Person.class, getItemResult.getItem());
     }
 
     @Override
     public void persist(Person person) {
+        //todo add consumed capacity meter
         mapper.save(person);
     }
 
     @Override
     public String create(Person person) {
+        //todo add consumed capacity meter
         mapper.save(person);
+        //todo does not return id
         return person.getId();
     }
 
     @Override
-    public void delete(Long id) {
-        AttributeValue attributeValue = new AttributeValue();
-        attributeValue.setN(String.valueOf(id));
-        DeleteItemResult deleteItemResult = amazonDynamoDB.deleteItem(Person.TABLE_NAME, Collections.singletonMap(Person.ID, attributeValue));
+    public void delete(String id) {
+        Map<String, AttributeValue> attributes = singletonMap(Person.ID, new AttributeValue(id));
+        DeleteItemResult deleteItemResult = amazonDynamoDB.deleteItem(Person.TABLE_NAME, attributes);
+
+        ConsumedCapacity consumedCapacity = deleteItemResult.getConsumedCapacity();
+
+        dynamoDbMonitoringService.record(consumedCapacity, "delete", id);
     }
 
     @Override
     public List<Person> findAllOnPage(Integer pageSize, Integer pageNumber) {
-        DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
+        ScanRequest scanRequest = new ScanRequest(Person.TABLE_NAME);
 
-        scanExpression.setLimit((pageNumber + 1) * pageSize);
+        scanRequest.setLimit((pageNumber + 1) * pageSize);
+        scanRequest.setSelect(Select.ALL_ATTRIBUTES);
 
-        scanExpression.setSelect(Select.ALL_ATTRIBUTES);
+        ScanResult scanResult = amazonDynamoDB.scan(scanRequest);
 
-        ScanResultPage<Person> tScanResultPage = mapper.scanPage(Person.class, scanExpression);
-        return tScanResultPage.getResults();
+        ConsumedCapacity consumedCapacity = scanResult.getConsumedCapacity();
+
+        dynamoDbMonitoringService.record(consumedCapacity, "findAllOnPage", pageSize, pageNumber);
+
+        return mapper.marshallIntoObjects(Person.class, scanResult.getItems());
     }
 }
