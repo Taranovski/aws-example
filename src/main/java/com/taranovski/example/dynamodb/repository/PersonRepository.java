@@ -10,7 +10,7 @@ import java.util.List;
 public interface PersonRepository {
     Person findById(String id);
 
-    void persist(Person person);
+    void update(String id, Person person);
 
     String create(Person person);
 

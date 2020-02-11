@@ -1,11 +1,12 @@
-spring.main.allow-bean-definition-overriding: false
+spring.profiles.include: embedded-dynamo-db,update-db-schema-to-latest
 
-server.port: 8080
 server.servlet.contextPath: /DynamoDBExample
+
+application.connectivity.dynamodb.embedded.persistence.type: in-memory
 
 application.connectivity.dynamodb.service.protocol: http
 application.connectivity.dynamodb.service.host: localhost
-application.connectivity.dynamodb.service.port: 9090
+application.connectivity.dynamodb.service.port: 19091
 application.connectivity.dynamodb.signin.region: us-west-2
 application.connectivity.dynamodb.awsAccessKeyId: no-op-access-key-id
 application.connectivity.dynamodb.awsSecretKey: no-op-secret-key

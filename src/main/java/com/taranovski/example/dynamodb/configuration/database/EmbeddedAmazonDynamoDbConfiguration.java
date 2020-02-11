@@ -1,4 +1,4 @@
-package com.taranovski.example.dynamodb.configuration;
+package com.taranovski.example.dynamodb.configuration.database;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -22,19 +22,21 @@ import java.util.Objects;
  */
 @Configuration
 @ConditionalOnExpression("#{environment.getActiveProfiles().?[#this == 'embedded-dynamo-db'].length == 1}")
-public class EmbeddedAmazonDynamoDbProvider {
+public class EmbeddedAmazonDynamoDbConfiguration {
 
-    @Value("${application.connectivity.dynamodb.service.endpoint}")
-    private String serviceEndpoint;
+    @Value("${application.connectivity.dynamodb.service.protocol}")
+    private String serviceProtocol;
+    @Value("${application.connectivity.dynamodb.service.host}")
+    private String serviceHost;
+    @Value("${application.connectivity.dynamodb.service.port}")
+    private String servicePort;
     @Value("${application.connectivity.dynamodb.signin.region}")
     private String signingRegion;
     @Value("${application.connectivity.dynamodb.awsAccessKeyId}")
     private String awsAccessKeyId;
     @Value("${application.connectivity.dynamodb.awsSecretKey}")
     private String awsSecretKey;
-    @Value("${application.connectivity.dynamodb.local.port}")
-    private String localServicePort;
-    @Value("${application.connectivity.dynamodb.local.persistence.type}")
+    @Value("${application.connectivity.dynamodb.embedded.persistence.type}")
     private String localServicePersistenceType;
 
     private AmazonDynamoDB amazonDynamoDB;
@@ -49,13 +51,13 @@ public class EmbeddedAmazonDynamoDbProvider {
                         Objects.equals(localServicePersistenceType, "in-memory") ?
                                 "-inMemory" :
                                 "-dbPath", System.getProperty("user.dir") + File.separator + "target",
-                        "-port", localServicePort,
+                        "-port", servicePort,
                 });
 
         dynamoDBProxyServer.start();
 
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, signingRegion);
+                new AwsClientBuilder.EndpointConfiguration(getServiceEndpoint(), signingRegion);
 
         AWSCredentials credentials = new BasicAWSCredentials(awsAccessKeyId, awsSecretKey);
 
@@ -69,14 +71,18 @@ public class EmbeddedAmazonDynamoDbProvider {
         return amazonDynamoDB;
     }
 
+    private String getServiceEndpoint() {
+        return serviceProtocol + "://" + serviceHost + ":" + servicePort;
+    }
+
     @PreDestroy
     public void preDestroy() throws Exception {
-        if (dynamoDBProxyServer != null) {
-            dynamoDBProxyServer.stop();
-        }
-
         if (amazonDynamoDB != null) {
             amazonDynamoDB.shutdown();
+        }
+
+        if (dynamoDBProxyServer != null) {
+            dynamoDBProxyServer.stop();
         }
     }
 }

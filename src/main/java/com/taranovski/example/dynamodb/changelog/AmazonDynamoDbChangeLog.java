@@ -9,6 +9,7 @@ import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.taranovski.example.dynamodb.domain.Person;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -23,6 +24,7 @@ import static java.util.Arrays.asList;
  * Created by Alyx on 09.02.2020.
  */
 @Component
+@ConditionalOnExpression("#{environment.getActiveProfiles().?[#this == 'update-db-schema-to-latest'].length == 1}")
 public class AmazonDynamoDbChangeLog {
 
     private final AmazonDynamoDB amazonDynamoDB;
@@ -38,6 +40,7 @@ public class AmazonDynamoDbChangeLog {
         Set<String> tableNamesSet = new HashSet<>(tableNames);
 
         createPersonsTableIfAbsent(tableNamesSet);
+        changePersonsTableProvisionedCapacityIfPresent(tableNamesSet);
 
     }
 
@@ -45,13 +48,11 @@ public class AmazonDynamoDbChangeLog {
         if (!tableNamesSet.contains(Person.TABLE_NAME)) {
 
             List<KeySchemaElement> keySchema = asList(
-                    new KeySchemaElement(Person.ID, KeyType.HASH),
-                    new KeySchemaElement(Person.NAME, KeyType.RANGE)
+                    new KeySchemaElement(Person.ID, KeyType.HASH)
             );
 
             List<AttributeDefinition> attributeDefinitions = asList(
-                    new AttributeDefinition(Person.ID, ScalarAttributeType.S),
-                    new AttributeDefinition(Person.NAME, ScalarAttributeType.S)
+                    new AttributeDefinition(Person.ID, ScalarAttributeType.S)
             );
 
             ProvisionedThroughput provisionedThroughput = new ProvisionedThroughput(100L, 100L);
@@ -59,6 +60,14 @@ public class AmazonDynamoDbChangeLog {
             CreateTableRequest createTableRequest = new CreateTableRequest(attributeDefinitions, Person.TABLE_NAME, keySchema, provisionedThroughput);
 
             amazonDynamoDB.createTable(createTableRequest);
+        }
+    }
+
+    private void changePersonsTableProvisionedCapacityIfPresent(Set<String> tableNamesSet) {
+        if (!tableNamesSet.contains(Person.TABLE_NAME)) {
+            ProvisionedThroughput provisionedThroughput = new ProvisionedThroughput(1L, 1L);
+
+            amazonDynamoDB.updateTable(Person.TABLE_NAME, provisionedThroughput);
         }
     }
 }

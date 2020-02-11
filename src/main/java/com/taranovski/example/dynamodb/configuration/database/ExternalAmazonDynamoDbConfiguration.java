@@ -1,4 +1,4 @@
-package com.taranovski.example.dynamodb.configuration;
+package com.taranovski.example.dynamodb.configuration.database;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -16,10 +16,14 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnExpression("#{environment.getActiveProfiles().?[#this == 'embedded-dynamo-db'].length == 0}")
-public class AmazonDynamoDbProvider {
+public class ExternalAmazonDynamoDbConfiguration {
 
-    @Value("${application.connectivity.dynamodb.service.endpoint}")
-    private String serviceEndpoint;
+    @Value("${application.connectivity.dynamodb.service.protocol}")
+    private String serviceProtocol;
+    @Value("${application.connectivity.dynamodb.service.host}")
+    private String serviceHost;
+    @Value("${application.connectivity.dynamodb.service.port}")
+    private String servicePort;
     @Value("${application.connectivity.dynamodb.signin.region}")
     private String signingRegion;
     @Value("${application.connectivity.dynamodb.awsAccessKeyId}")
@@ -30,7 +34,7 @@ public class AmazonDynamoDbProvider {
     @Bean
     public AmazonDynamoDB amazonDynamoDB() {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, signingRegion);
+                new AwsClientBuilder.EndpointConfiguration(getServiceEndpoint(), signingRegion);
 
         AWSCredentials credentials = new BasicAWSCredentials(awsAccessKeyId, awsSecretKey);
 
@@ -40,5 +44,9 @@ public class AmazonDynamoDbProvider {
                 .withEndpointConfiguration(endpointConfiguration)
                 .withCredentials(credentialsProvider)
                 .build();
+    }
+
+    private String getServiceEndpoint() {
+        return serviceProtocol + "://" + serviceHost + ":" + servicePort;
     }
 }

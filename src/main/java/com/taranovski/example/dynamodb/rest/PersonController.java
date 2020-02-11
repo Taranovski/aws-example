@@ -33,22 +33,22 @@ public class PersonController {
         return personRepository.findAllOnPage(pageSize, pageNumber);
     }
 
-    @GetMapping(path = "/$id")
+    @GetMapping(path = "/{id}")
     public Person findById(@PathVariable(name = "id") String id) {
         return personRepository.findById(id);
     }
 
-    @PutMapping
+    @PostMapping
     public String createPerson(@RequestBody Person person) {
         return personRepository.create(person);
     }
 
-    @PostMapping
-    public void updatePerson(@RequestBody Person person) {
-        personRepository.persist(person);
+    @PutMapping(path = "/{id}")
+    public void updatePerson(@PathVariable(name = "id") String id, @RequestBody Person person) {
+        personRepository.update(id, person);
     }
 
-    @DeleteMapping(path = "/$id")
+    @DeleteMapping(path = "/{id}")
     public void deleteById(@PathVariable(name = "id") String id) {
         personRepository.delete(id);
     }
