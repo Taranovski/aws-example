@@ -2,7 +2,7 @@ package com.taranovski.example.dynamodb.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.taranovski.example.dynamodb.domain.Person;
+import com.taranovski.example.dynamodb.dto.PersonDto;
 import com.taranovski.example.dynamodb.support.IntegrationTestRunSupport;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +35,7 @@ public class PersonControllerTest extends IntegrationTestRunSupport {
 
         assertTrue(emptyPersonsList.isEmpty());
 
-        Person person = new Person();
+        PersonDto person = new PersonDto();
         person.setName("Alex");
         person.setDateOfBirth(LocalDate.of(1234, 2, 3));
         person.setSalary(new BigDecimal("123456.78"));
@@ -46,7 +46,7 @@ public class PersonControllerTest extends IntegrationTestRunSupport {
         assertNotNull(personId);
 
         List list = testRestTemplate.getForObject("/persons", List.class);
-        List<Person> personsList = objectMapper.convertValue(list, new TypeReference<List<Person>>() {
+        List<PersonDto> personsList = objectMapper.convertValue(list, new TypeReference<List<PersonDto>>() {
             @Override
             public Type getType() {
                 return super.getType();
@@ -55,7 +55,7 @@ public class PersonControllerTest extends IntegrationTestRunSupport {
 
         assertEquals(1, personsList.size());
 
-        Person firstPerson = personsList.get(0);
+        PersonDto firstPerson = personsList.get(0);
 
         assertEquals(personId, firstPerson.getId());
         assertEquals(person.getName(), firstPerson.getName());
@@ -64,7 +64,7 @@ public class PersonControllerTest extends IntegrationTestRunSupport {
         assertEquals(person.getSalary(), firstPerson.getSalary());
 
 
-        Person objectFromDb = testRestTemplate.getForObject("/persons/" + personId, Person.class);
+        PersonDto objectFromDb = testRestTemplate.getForObject("/persons/" + personId, PersonDto.class);
 
         assertEquals(person.getName(), objectFromDb.getName());
         assertEquals(person.getDateOfBirth(), objectFromDb.getDateOfBirth());
@@ -75,7 +75,7 @@ public class PersonControllerTest extends IntegrationTestRunSupport {
 
         testRestTemplate.put("/persons/" + personId, person);
 
-        Person objectFromDb1 = testRestTemplate.getForObject("/persons/" + personId, Person.class);
+        PersonDto objectFromDb1 = testRestTemplate.getForObject("/persons/" + personId, PersonDto.class);
 
         assertEquals(person.getName(), objectFromDb1.getName());
         assertNull(objectFromDb1.getDateOfBirth());

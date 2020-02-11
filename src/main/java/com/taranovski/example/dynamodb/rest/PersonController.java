@@ -1,6 +1,8 @@
 package com.taranovski.example.dynamodb.rest;
 
+import com.taranovski.example.dynamodb.converter.PersonDtoConverter;
 import com.taranovski.example.dynamodb.domain.Person;
+import com.taranovski.example.dynamodb.dto.PersonDto;
 import com.taranovski.example.dynamodb.repository.PersonRepository;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,29 +24,44 @@ import java.util.List;
 public class PersonController {
 
     private final PersonRepository personRepository;
+    private final PersonDtoConverter personDtoConverter;
 
-    public PersonController(PersonRepository personRepository) {
+    public PersonController(PersonRepository personRepository,
+                            PersonDtoConverter personDtoConverter) {
         this.personRepository = personRepository;
+        this.personDtoConverter = personDtoConverter;
     }
 
     @GetMapping
-    public List<Person> findPage(@RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize,
+    public List<PersonDto> findPage(@RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize,
                                  @RequestParam(name = "pageNumber", defaultValue = "0") Integer pageNumber) {
-        return personRepository.findAllOnPage(pageSize, pageNumber);
+
+        List<Person> allOnPage = personRepository.findAllOnPage(pageSize, pageNumber);
+
+        return personDtoConverter.toDtos(allOnPage);
     }
 
     @GetMapping(path = "/{id}")
-    public Person findById(@PathVariable(name = "id") String id) {
-        return personRepository.findById(id);
+    public PersonDto findById(@PathVariable(name = "id") String id) {
+
+        Person byId = personRepository.findById(id);
+
+        return personDtoConverter.toDto(byId);
     }
 
     @PostMapping
-    public String createPerson(@RequestBody Person person) {
+    public String createPerson(@RequestBody PersonDto personDto) {
+
+        Person person = personDtoConverter.fromDto(personDto);
+
         return personRepository.create(person);
     }
 
     @PutMapping(path = "/{id}")
-    public void updatePerson(@PathVariable(name = "id") String id, @RequestBody Person person) {
+    public void updatePerson(@PathVariable(name = "id") String id, @RequestBody PersonDto personDto) {
+
+        Person person = personDtoConverter.fromDto(personDto);
+
         personRepository.update(id, person);
     }
 

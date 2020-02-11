@@ -1,4 +1,4 @@
-package com.taranovski.example.dynamodb.converter;
+package com.taranovski.example.dynamodb.domain.converter;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
 

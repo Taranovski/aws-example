@@ -13,7 +13,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,13 +34,16 @@ public class AmazonDynamoDbChangeLog {
 
     @PostConstruct
     public void postConstruct() {
+        applyChangeLog();
+    }
+
+    public void applyChangeLog() {
         ListTablesResult listTablesResult = amazonDynamoDB.listTables();
         List<String> tableNames = listTablesResult.getTableNames();
         Set<String> tableNamesSet = new HashSet<>(tableNames);
 
         createPersonsTableIfAbsent(tableNamesSet);
         changePersonsTableProvisionedCapacityIfPresent(tableNamesSet);
-
     }
 
     private void createPersonsTableIfAbsent(Set<String> tableNamesSet) {
